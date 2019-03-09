@@ -90,7 +90,7 @@ for n in range(len(data_test)):
     word = vocab_dict[sentence[0][0]]
     v_init = np.zeros([M])
     for i in range(M):
-        v_init[i] = pi[i] * B[i, word]
+        v_init[i] = pi[i] * B[i, word] 
     V[:, 0] = v_init / np.sum(v_init)
     for t in range(1, T):
         word = vocab_dict[sentence[t][0]]
