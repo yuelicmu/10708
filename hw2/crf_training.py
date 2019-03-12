@@ -4,12 +4,12 @@
 
 
 import numpy as np
-import torch
-import torch.nn as nn
-
 import sys
 
 sys.path.append('/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages')
+
+import torch
+import torch.nn as nn
 
 data_train = np.load("../train_set.npy")
 data_test = np.load("../test_set.npy")
@@ -222,9 +222,10 @@ class CRF(nn.Module):
 
 def crf_train(my_net, num_epoch, train_loader):
     print('Beginning training:')
-    optimizer = torch.optim.Adam(my_net.parameters(), lr=0.0001)
+    optimizer = torch.optim.Adam(my_net.parameters(), lr=0.0005)
     for epoch in range(num_epoch):
         i = 0
+        losses = []
         for batch in train_loader:
             loss = 0
             for (x, y, upper) in batch:
@@ -233,7 +234,10 @@ def crf_train(my_net, num_epoch, train_loader):
             loss.backward()
             optimizer.step()
             i += 1
-            print('epoch %d batch %d train loss: %.3f.' % (epoch, i, loss))
+            # print('epoch %d batch %d train loss: %.3f.' % (epoch, i, loss))
+            print('batch %d train loss: %.3f.' % (i, loss))
+            losses.append(loss)
+        print('epoch %d train loss: %.3f.' % (epoch, np.mean(losses)))
     return my_net
 
 
@@ -256,18 +260,20 @@ def acc(trained_net, test_loader):
             accurate += int(pred[t] == y.data[t])
             total += 1
         i += 1
-        print(i, end=',')
+        print(i)
     print(accurate, total, accurate / total)
     return accurate, total, accurate / total
 
 
 if __name__ == '__main__':
+    
     import numpy as np
-
     data_train = np.load("../train_set.npy")
     data_test = np.load("../test_set.npy")
     vocab = open('../vocab.txt').read().splitlines()
     tagset = open('../tagset.txt').read().splitlines()
+    save_path = 'param.pt'
+
     V = len(vocab)
     M = len(tagset)
     N = data_train.shape[0]
@@ -277,9 +283,7 @@ if __name__ == '__main__':
     A_log, B_log = get_hmm_params(data_train)
 
     my_net = CRF(M, V, T=A_log, E=B_log)
-    my_net.load_state_dict(torch.load('param.pt'))
-    my_net.eval()
-    trained_net = crf_train(my_net, 1, train_loader)
+    trained_net = crf_train(my_net, 15, train_loader)
     print('Saving model parameters:')
-    torch.save(trained_net.state_dict(), 'param2.pt')
-    acc(trained_net, test_loader)
+    torch.save(trained_net.state_dict(), save_path)
+    # acc(trained_net, test_loader)
