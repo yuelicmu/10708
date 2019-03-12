@@ -266,14 +266,12 @@ def acc(trained_net, test_loader):
 
 
 if __name__ == '__main__':
-    
     import numpy as np
+
     data_train = np.load("../train_set.npy")
     data_test = np.load("../test_set.npy")
     vocab = open('../vocab.txt').read().splitlines()
     tagset = open('../tagset.txt').read().splitlines()
-    save_path = 'param.pt'
-
     V = len(vocab)
     M = len(tagset)
     N = data_train.shape[0]
@@ -283,7 +281,12 @@ if __name__ == '__main__':
     A_log, B_log = get_hmm_params(data_train)
 
     my_net = CRF(M, V, T=A_log, E=B_log)
-    trained_net = crf_train(my_net, 15, train_loader)
-    print('Saving model parameters:')
-    torch.save(trained_net.state_dict(), save_path)
+    for i in range(12, 15):
+        load_path = 'param' + str(i) + '.pt'
+        save_path = 'param' + str(i+1) + '.pt'
+        my_net.load_state_dict(torch.load(load_path))
+        my_net.eval()
+        trained_net = crf_train(my_net, 1, train_loader)
+        print('Saving model parameters:')
+        torch.save(trained_net.state_dict(), save_path)
     # acc(trained_net, test_loader)

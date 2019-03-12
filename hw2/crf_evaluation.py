@@ -1,12 +1,15 @@
 from crf_main import CRF, get_hmm_params, loader, test_loader
 import numpy as np
 import sys
-from tqdm import tqdm
 
 sys.path.append('/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages')
+sys.path.append('/Users/yueli/src/tqdm')
 
 import torch
 import torch.nn as nn
+from tqdm import tqdm
+
+LOAD_PATH = 'param15.pt'
 
 data_train = np.load("../train_set.npy")
 data_test = np.load("../test_set.npy")
@@ -27,19 +30,23 @@ test_loader = test_loader(data_test)
 A_log, B_log = get_hmm_params(data_train)
 
 my_net = CRF(M, V, T=A_log, E=B_log)
-my_net.load_state_dict(torch.load('param13.pt'))
+my_net.load_state_dict(torch.load(LOAD_PATH))
 my_net.eval()
 
 # negative log likelihood on test set
 log_p = 0
-for x, y, upper in test_loader:
+for i in tqdm(range(len(test_loader))):
+# for x, y, upper in test_loader:
+    x, y, upper = test_loader[i]
     log_p += my_net(x, y, upper).data.numpy()
 print('Negative log-likelihood on test set:')
 print(log_p)
 
 # negative log likelihood on train set
 log_p = 0
-for x, y, upper in test_loader:
+for i in tqdm(range(len(train_loader))):
+# for x, y, upper in test_loader:
+    x, y, upper = train_loader[i]
     log_p += my_net(x, y, upper).data.numpy()
 print('Negative log-likelihood on training set:')
 print(log_p)
@@ -51,7 +58,7 @@ def acc(trained_net, test_loader):
     total = 0
     i = 0
     N = len(test_loader)
-    for i in tqdm.tqdm(range(N)):
+    for i in tqdm(range(N)):
         x, y, upper = test_loader[i]
         T = len(x)
         pred = trained_net.prediction(x, upper)
@@ -60,13 +67,14 @@ def acc(trained_net, test_loader):
             total += 1
     print(accurate, total, accurate / total)
     return accurate, total, accurate / total
+acc(my_net, test_loader)
 
 # calculating confusion matrix
 def confusion(trained_net, test_loader, M=12):
     print('Calculating confusion matrix:')
     confusion = np.zeros([M, M])
     N = len(test_loader)
-    for i in tqdm.tqdm(range(N)):
+    for i in tqdm(range(N)):
         x, y, upper = test_loader[i]
         T = len(x)
         pred = trained_net.prediction(x, upper)
